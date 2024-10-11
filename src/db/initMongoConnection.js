@@ -1,10 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-
-dotenv.config(); 
-
-const DB_URI = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_URL}/?retryWrites=true&w=majority`;
-
+dotenv.config();
+const DB_URI = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_URL}/?retryWrites=true&w=majority&appName=Cluster1`;
 export const initDBConnection = async () => {
   try {
     console.log("Connecting to MongoDB with URL:", DB_URI);

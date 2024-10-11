@@ -1,4 +1,4 @@
-import Contact from '../models/contact.js';
+import { Contact } from '../models/contact.js';
 
 // Отримати всі контакти
 export const getAllContacts = async () => {
@@ -12,7 +12,7 @@ export const getAllContacts = async () => {
 };
 
 // Отримати контакт за ID
-export const getContactById = async (id) => {
+export const getContactByIdService = async (id) => {
   try {
     const contact = await Contact.findById(id);
     if (!contact) {
@@ -22,47 +22,5 @@ export const getContactById = async (id) => {
   } catch (error) {
     console.error('Error fetching contact:', error);
     throw new Error('Error fetching contact');
-  }
-};
-
-// Створити новий контакт
-export const createNewContact = async (contactData) => {
-  try {
-    const contact = new Contact(contactData);
-    await contact.save();
-    return contact;
-  } catch (error) {
-    console.error('Error creating contact:', error);
-    throw new Error('Error creating contact');
-  }
-};
-
-// Оновити контакт за ID
-export const updateContactById = async (id, contactData) => {
-  try {
-    const contact = await Contact.findByIdAndUpdate(id, contactData, {
-      new: true,
-    });
-    if (!contact) {
-      throw new Error('Contact not found');
-    }
-    return contact;
-  } catch (error) {
-    console.error('Error updating contact:', error);
-    throw new Error('Error updating contact');
-  }
-};
-
-// Видалити контакт за ID
-export const deleteContactById = async (id) => {
-  try {
-    const contact = await Contact.findByIdAndDelete(id);
-    if (!contact) {
-      throw new Error('Contact not found');
-    }
-    return contact;
-  } catch (error) {
-    console.error('Error deleting contact:', error);
-    throw new Error('Error deleting contact');
   }
 };
