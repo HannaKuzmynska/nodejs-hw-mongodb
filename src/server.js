@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Маршрути
+// Реєстрація маршрутів
 app.get('/contacts', getAllContacts);
 app.get('/contacts/:contactId', getContactById);
 
@@ -26,6 +26,3 @@ export const setupServer = () => {
     logger.info(`Server is running on port ${PORT}`);
   });
 };
-
-// Запуск сервера
-setupServer();
