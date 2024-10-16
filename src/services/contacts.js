@@ -1,26 +1,27 @@
-import { Contact } from '../models/contact.js';
+import Contact from '../models/contact.js'; // або імплементація класу, якщо ви використовуєте клас
 
-// Отримати всі контакти
-export const getAllContacts = async () => {
-  try {
-    const contacts = await Contact.find();
-    return contacts;
-  } catch (error) {
-    console.error('Error fetching contacts:', error);
-    throw new Error('Could not fetch contacts');
-  }
+export const getAll = async () => {
+  // Логіка для отримання всіх контактів
+  return await Contact.find(); // або інша логіка
 };
 
-// Отримати контакт за ID
-export const getContactByIdService = async (id) => {
-  try {
-    const contact = await Contact.findById(id);
-    if (!contact) {
-      throw new Error('Contact not found');
-    }
-    return contact;
-  } catch (error) {
-    console.error('Error fetching contact:', error);
-    throw new Error('Error fetching contact');
-  }
+export const getById = async (id) => {
+  // Логіка для отримання контакту за ID
+  return await Contact.findById(id); // або інша логіка
+};
+
+export const create = async (data) => {
+  // Логіка для створення нового контакту
+  const newContact = new Contact(data);
+  return await newContact.save();
+};
+
+export const update = async (id, data) => {
+  // Логіка для оновлення контакту
+  return await Contact.findByIdAndUpdate(id, data, { new: true });
+};
+
+export const deleteContact = async (id) => {
+  // Логіка для видалення контакту
+  return await Contact.findByIdAndDelete(id);
 };
