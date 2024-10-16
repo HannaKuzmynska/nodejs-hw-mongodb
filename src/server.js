@@ -1,28 +1,21 @@
 import express from 'express';
-import cors from 'cors';
-import pino from 'pino';
-import { getAllContacts, getContactById } from './controllers/contactsController.js';
-
-const logger = pino();
+import contactsRouter from './routers/contacts.js';
+import errorHandler from './middlewares/errorHandler.js';
+import notFoundHandler from './middlewares/notFoundHandler.js';
+import dotenv from 'dotenv';
+dotenv.config();
 const app = express();
-
-app.use(cors());
 app.use(express.json());
-
-// Реєстрація маршрутів
-app.get('/contacts', getAllContacts);
-app.get('/contacts/:contactId', getContactById);
-
-// Маршрут для неіснуючих маршрутів
-app.use((req, res) => {
-  res.status(404).json({ message: 'Not found' });
+app.get('/', (req, res) => {
+  res.send('Welcome to the Contacts API');
 });
-
-// Функція для налаштування і запуску сервера
+app.use('/contacts', contactsRouter);
+app.use(notFoundHandler);
+app.use(errorHandler);
 export const setupServer = () => {
   const PORT = process.env.PORT || 3000;
 
   app.listen(PORT, () => {
-    logger.info(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 };
