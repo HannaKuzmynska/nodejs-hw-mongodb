@@ -1,4 +1,5 @@
 import createError from 'http-errors';
+import mongoose from 'mongoose';
 const { NotFound } = createError;
 
 import * as contactsService from '../services/contacts.js';
@@ -15,6 +16,12 @@ export const getAllContacts = async (req, res, next) => {
 export const getContactById = async (req, res, next) => {
   try {
     const { contactId } = req.params;
+
+    // Перевірка на валідність ObjectId
+    if (!mongoose.Types.ObjectId.isValid(contactId)) {
+      return next(new NotFound('Contact not found'));
+    }
+
     const contact = await contactsService.getById(contactId);
     if (!contact) {
       throw new NotFound('Contact not found');
@@ -41,6 +48,12 @@ export const createContact = async (req, res, next) => {
 export const updateContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
+
+    // Перевірка на валідність ObjectId
+    if (!mongoose.Types.ObjectId.isValid(contactId)) {
+      return next(new NotFound('Contact not found'));
+    }
+
     const updatedContact = await contactsService.update(contactId, req.body);
     if (!updatedContact) {
       throw new NotFound('Contact not found');
@@ -58,6 +71,12 @@ export const updateContact = async (req, res, next) => {
 export const deleteContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
+
+    // Перевірка на валідність ObjectId
+    if (!mongoose.Types.ObjectId.isValid(contactId)) {
+      return next(new NotFound('Contact not found'));
+    }
+
     const deleted = await contactsService.deleteContact(contactId);
     if (!deleted) {
       throw new NotFound('Contact not found');
