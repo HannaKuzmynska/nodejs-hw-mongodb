@@ -8,7 +8,7 @@ import { loadInitialContacts } from './utils/loadInitialContacts.js';
 async function start() {
   try {
     await initDBConnection();
-    await loadInitialContacts(); 
+    await loadInitialContacts();
     setupServer();
   } catch (error) {
     console.error("Error starting the server:", error);
