@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-export const contactSchema = new mongoose.Schema({
+
+const contactSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Name is required'],
@@ -26,7 +27,13 @@ export const contactSchema = new mongoose.Schema({
     required: true,
     default: 'personal',
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
 }, { timestamps: true, versionKey: false });
+
 const Contact = mongoose.model('Contact', contactSchema);
 
 export default Contact;

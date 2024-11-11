@@ -1,9 +1,13 @@
 import { registerUser, loginUser, logoutUser, refreshUsersSession } from '../services/auth.js';
 import { ONE_DAY } from '../constants/index.js';
-
-// Контролер для реєстрації користувача
+import createHttpError from 'http-errors';
 export const registerUserController = async (req, res, next) => {
   try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw createHttpError(400, 'Email and password are required');
+    }
+
     const user = await registerUser(req.body);
     res.status(201).json({
       status: 'success',
@@ -14,19 +18,30 @@ export const registerUserController = async (req, res, next) => {
     next(error);
   }
 };
-
-// Контролер для логіна користувача
 export const loginUserController = async (req, res, next) => {
   try {
-    const session = await loginUser(req.body);
+    const { email, password } = req.body;
 
-    // Встановлюємо refreshToken у cookie
+    if (!email || !password) {
+      throw createHttpError(400, 'Email and password are required');
+    }
+
+    const session = await loginUser(req.body);
+    if (!session) {
+      throw createHttpError(401, 'Invalid email or password');
+    }
+
     res.cookie('refreshToken', session.refreshToken, {
       httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
       expires: new Date(Date.now() + ONE_DAY),
     });
+
     res.cookie('sessionId', session._id, {
       httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
       expires: new Date(Date.now() + ONE_DAY),
     });
 
@@ -39,40 +54,48 @@ export const loginUserController = async (req, res, next) => {
     next(error);
   }
 };
-
-// Контролер для виходу користувача
 export const logoutUserController = async (req, res, next) => {
   try {
     const sessionId = req.cookies.sessionId;
+
     if (sessionId) {
       await logoutUser(sessionId);
     }
 
-    // Очищуємо куки з токенами
-    res.clearCookie('refreshToken');
-    res.clearCookie('sessionId');
+    res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'Strict' });
+    res.clearCookie('sessionId', { httpOnly: true, secure: true, sameSite: 'Strict' });
 
-    res.status(204).send(); // No Content
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
 };
 
-// Контролер для оновлення сесії (отримання нового accessToken)
 export const refreshUserSessionController = async (req, res, next) => {
   try {
-    const session = await refreshUsersSession({
-      sessionId: req.cookies.sessionId,
-      refreshToken: req.cookies.refreshToken,
-    });
+    const { sessionId, refreshToken } = req.cookies;
 
-    // Оновлюємо cookies з новими значеннями
+    if (!sessionId || !refreshToken) {
+      throw createHttpError(401, 'Missing session or refresh token');
+    }
+
+    const session = await refreshUsersSession({ sessionId, refreshToken });
+
+    if (!session) {
+      throw createHttpError(401, 'Invalid session or refresh token');
+    }
+
     res.cookie('refreshToken', session.refreshToken, {
       httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
       expires: new Date(Date.now() + ONE_DAY),
     });
+
     res.cookie('sessionId', session._id, {
       httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
       expires: new Date(Date.now() + ONE_DAY),
     });
 

@@ -2,16 +2,32 @@ import createHttpError from 'http-errors';
 import { Session } from '../models/session.js';
 
 export const authenticate = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return next(createHttpError(401, 'Authorization header required'));
+  try {
+    // Перевіряємо наявність куків
+    const sessionId = req.cookies.sessionId;
+    const refreshToken = req.cookies.refreshToken;
 
-  const token = authHeader.split(' ')[1];
-  const session = await Session.findOne({ accessToken: token });
-  if (!session) return next(createHttpError(401, 'Session not found or expired'));
+    if (!sessionId || !refreshToken) {
+      return next(createHttpError(401, 'Authorization cookies required'));
+    }
 
-  const isAccessTokenExpired = new Date() > session.accessTokenValidUntil;
-  if (isAccessTokenExpired) return next(createHttpError(401, 'Access token expired'));
+    // Знаходимо сесію за sessionId
+    const session = await Session.findOne({ _id: sessionId, refreshToken });
 
-  req.user = session.userId;
-  next();
+    if (!session) {
+      return next(createHttpError(401, 'Session not found or expired'));
+    }
+
+    // Перевіряємо, чи не протермінований accessToken
+    const isAccessTokenExpired = new Date() > session.accessTokenValidUntil;
+
+    if (isAccessTokenExpired) {
+      return next(createHttpError(401, 'Access token expired'));
+    }
+
+    req.user = session.userId;
+    next();
+  } catch (error) {
+    next(createHttpError(500, 'Server error during authentication'));
+  }
 };
