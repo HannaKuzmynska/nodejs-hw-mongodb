@@ -8,7 +8,7 @@ export const authenticate = async (req, res, next) => {
     const refreshToken = req.cookies.refreshToken;
 
     if (!sessionId || !refreshToken) {
-      return next(createHttpError(401, 'Authorization cookies required'));
+      return next(createHttpError(401, 'Authorization required'));
     }
 
     // Знаходимо сесію за sessionId

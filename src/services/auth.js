@@ -1,11 +1,9 @@
+import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import createHttpError from 'http-errors';
-import jwt from 'jsonwebtoken';
 import { User } from '../models/user.js';
 import { Session } from '../models/session.js';
 import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/index.js';
-
-const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } = process.env;
 
 // Реєстрація нового користувача
 export const registerUser = async (payload) => {
@@ -16,6 +14,9 @@ export const registerUser = async (payload) => {
   return await User.create({ ...payload, password: hashedPassword });
 };
 
+// Функція для генерації випадкових токенів
+const generateRandomToken = () => randomBytes(30).toString('base64');
+
 // Логін користувача і створення сесії
 export const loginUser = async (payload) => {
   const user = await User.findOne({ email: payload.email });
@@ -24,9 +25,9 @@ export const loginUser = async (payload) => {
   const isPasswordValid = await bcrypt.compare(payload.password, user.password);
   if (!isPasswordValid) throw createHttpError(401, 'Unauthorized');
 
-  // Генеруємо accessToken і refreshToken
-  const accessToken = jwt.sign({ userId: user._id }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ userId: user._id }, REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
+  // Генеруємо accessToken і refreshToken за допомогою випадкових значень
+  const accessToken = generateRandomToken();
+  const refreshToken = generateRandomToken();
 
   // Видаляємо попередні сесії, якщо вони існують
   await Session.deleteMany({ userId: user._id });
@@ -57,8 +58,8 @@ export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
   if (isSessionTokenExpired) throw createHttpError(401, 'Session token expired');
 
   // Генеруємо нові токени
-  const newAccessToken = jwt.sign({ userId: session.userId }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-  const newRefreshToken = jwt.sign({ userId: session.userId }, REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
+  const newAccessToken = generateRandomToken();
+  const newRefreshToken = generateRandomToken();
 
   // Видалення старої сесії і створення нової
   await Session.deleteOne({ _id: sessionId, refreshToken });
@@ -73,5 +74,3 @@ export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
 
   return newSession;
 };
-
-
