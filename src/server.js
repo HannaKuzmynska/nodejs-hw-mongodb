@@ -5,7 +5,9 @@ import authRouter from './routers/auth.js';
 import contactsRouter from './routers/contacts.js';
 import errorHandler from './middlewares/errorHandler.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
-import { UPLOAD_DIR } from './constants/index.js'; // Додано імпорт для UPLOAD_DIR
+import { UPLOAD_DIR } from './constants/index.js';
+import { swaggerDocs } from './middlewares/swaggerDocs.js'
+
 
 dotenv.config();
 
@@ -13,18 +15,16 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// Додаємо статичний маршрут для доступу до файлів у папці "uploads"
 app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/api-docs', swaggerDocs());
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Contacts API');
 });
 
-// Підключення маршрутів
 app.use('/auth', authRouter);
 app.use('/contacts', contactsRouter);
 
-// Обробка помилок
 app.use(notFoundHandler);
 app.use(errorHandler);
 
