@@ -10,7 +10,7 @@ tags:
   - name: Contacts
     description: Operations about contacts.
 servers:
-  - url: https://contacts-ehsc.onrender.com
+  - url: https://contacts-app-1m5x.onrender.com
 paths:
   /contacts:
     get:
