@@ -4,7 +4,6 @@ import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
 import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
 import { env } from '../utils/env.js';
 
-// Контролер для отримання всіх контактів
 export const getAllContacts = async (req, res, next) => {
   try {
     const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
@@ -32,7 +31,6 @@ export const getAllContacts = async (req, res, next) => {
   }
 };
 
-// Контролер для отримання контакту за ID
 export const getContactById = async (req, res, next) => {
   try {
     const { contactId } = req.params;
@@ -52,26 +50,23 @@ export const getContactById = async (req, res, next) => {
   }
 };
 
-// Контролер для створення нового контакту
 export const createContact = async (req, res, next) => {
   try {
-    const photo = req.file; // Отримуємо файл із запиту
-
+    const photo = req.file;
     let photoUrl;
 
-    // Перевіряємо, чи потрібно зберігати фото у Cloudinary
     if (photo) {
       if (env('ENABLE_CLOUDINARY') === 'true') {
-        photoUrl = await saveFileToCloudinary(photo); // Зберігаємо фото в Cloudinary
+        photoUrl = await saveFileToCloudinary(photo);
       } else {
-        photoUrl = await saveFileToUploadDir(photo); // Зберігаємо фото в папку завантажень
+        photoUrl = await saveFileToUploadDir(photo);
       }
     }
 
     const newContact = await contactsService.create({
       ...req.body,
       userId: req.user._id,
-      photoPath: photoUrl, // Додаємо шлях до збереженого фото
+      ...(photoUrl && { photoPath: photoUrl }),
     });
 
     res.status(201).json({
@@ -84,27 +79,30 @@ export const createContact = async (req, res, next) => {
   }
 };
 
-// Контролер для оновлення контакту за ID
 export const updateContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    const photo = req.file; // Отримуємо файл із запиту
-
+    const photo = req.file;
     let photoUrl;
-
-    // Перевіряємо, чи потрібно зберігати фото у Cloudinary
     if (photo) {
       if (env('ENABLE_CLOUDINARY') === 'true') {
-        photoUrl = await saveFileToCloudinary(photo); // Зберігаємо фото в Cloudinary
+        photoUrl = await saveFileToCloudinary(photo);
       } else {
-        photoUrl = await saveFileToUploadDir(photo); // Зберігаємо фото в папку завантажень
+        photoUrl = await saveFileToUploadDir(photo);
       }
     }
-
-    const updatedContact = await contactsService.update(contactId, req.user._id, {
+    const updateData = {
       ...req.body,
-      photoPath: photoUrl, // Додаємо шлях до збереженого фото
-    });
+      ...(photoUrl && { photoPath: photoUrl }),
+    };
+    Object.keys(updateData).forEach(
+      key => (updateData[key] === undefined || updateData[key] === '') && delete updateData[key]
+    );
+    if (Object.keys(updateData).length === 0) {
+      throw createHttpError(400, 'No fields to update');
+    }
+
+    const updatedContact = await contactsService.update(contactId, req.user._id, updateData);
 
     if (!updatedContact) {
       throw createHttpError(404, 'Contact not found');
@@ -119,8 +117,6 @@ export const updateContact = async (req, res, next) => {
     next(error);
   }
 };
-
-// Контролер для видалення контакту за ID
 export const deleteContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
