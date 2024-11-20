@@ -26,8 +26,8 @@ router.post(
   '/',
   upload.single('photo'),
   (req, res, next) => {
-    console.log('File:', req.file); // Перевіряємо файл
-    console.log('Body:', req.body); // Перевіряємо тіло запиту
+    console.log('File:', req.file); 
+    console.log('Body:', req.body);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
