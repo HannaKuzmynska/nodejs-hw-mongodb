@@ -1,69 +1,85 @@
-import Contact from '../models/contact.js';
+import { ContactsCollection } from '../db/models/contacts.js';
+import { calculatePaginationData } from '../utils/calculatePaginationData.js';
+import { SORT_ORDER } from '../constants/index.js';
 
-// Функція для отримання всіх контактів з фільтрацією, сортуванням і пагінацією
-export const getAll = async (page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', filters = {}) => {
+export const getAllContacts = async ({
+  userId,
+  page = 1,
+  perPage = 10,
+  sortOrder = SORT_ORDER.ASC,
+  sortBy = '_id',
+  filter = {},
+}) => {
+  const limit = perPage;
   const skip = (page - 1) * perPage;
 
-  const sortOrderValue = sortOrder === 'asc' ? 1 : -1;
+  const contactsQuery = ContactsCollection.find({ userId });
 
-  const query = Contact.find(filters)
-    .sort({ [sortBy]: sortOrderValue })
-    .skip(skip)
-    .limit(perPage);
+  if (filter.type) {
+    contactsQuery.where('contactType').equals(filter.type);
+  }
+  if (filter.isFavourite) {
+    contactsQuery.where('isFavourite').equals(filter.isFavourite);
+  }
 
-  const contacts = await query.exec();
+  const [contactsCount, contacts] = await Promise.all([
+    ContactsCollection.find().merge(contactsQuery).countDocuments(),
+    contactsQuery
+      .skip(skip)
+      .limit(limit)
+      .sort({ [sortBy]: sortOrder })
+      .exec(),
+  ]);
 
-  const totalItems = await Contact.countDocuments(filters);
-  const totalPages = Math.ceil(totalItems / perPage);
-
+  const paginationData = calculatePaginationData(contactsCount, page, perPage);
   return {
     data: contacts,
-    page,
-    perPage,
-    totalItems,
-    totalPages,
-    hasPreviousPage: page > 1,
-    hasNextPage: page < totalPages,
+    ...paginationData,
   };
 };
 
-// Функція для отримання контакту за його ID і userId
-export const getById = async (id, userId) => {
-  const contact = await Contact.findOne({ _id: id, userId });
-  if (!contact) {
-    throw new Error('Contact not found');
-  }
+export const getContactById = async (contactId, userId) => {
+  const contact = await ContactsCollection.findOne({ _id: contactId, userId });
   return contact;
 };
 
-// Функція для створення нового контакту
-export const create = async (contactData) => {
-  const newContact = new Contact(contactData);
-  return await newContact.save();
+export const createContact = async (payload, userId) => {
+  const contactData = { ...payload, userId };
+  const contact = await ContactsCollection.create(contactData);
+  return contact;
 };
 
-// Функція для оновлення контакту за його ID і userId
-export const update = async (id, userId, updatedData) => {
-  const updatedContact = await Contact.findOneAndUpdate(
-    { _id: id, userId },
-    updatedData,
-    { new: true }
+export const updateContact = async (
+  contactId,
+  userId,
+  payload,
+  options = {},
+) => {
+  const rawResult = await ContactsCollection.findOneAndUpdate(
+    {
+      _id: contactId,
+      userId,
+    },
+    payload,
+    {
+      new: true,
+      includeResultMetadata: true,
+      ...options,
+    },
   );
 
-  if (!updatedContact) {
-    throw new Error('Contact not found or not authorized to update');
-  }
+  if (!rawResult || !rawResult.value) return null;
 
-  return updatedContact;
+  return {
+    contact: rawResult.value,
+    isNew: Boolean(rawResult?.lastErrorObject?.upserted),
+  };
 };
 
-// Функція для видалення контакту за його ID і userId
-export const remove = async (id, userId) => {
-  const deletedContact = await Contact.findOneAndDelete({ _id: id, userId });
-
-  if (!deletedContact) {
-    throw new Error('Contact not found or not authorized to delete');
-  }
-
-  return deletedContact;
+export const deleteContact = async (contactId, userId) => {
+  const contact = await ContactsCollection.findOneAndDelete({
+    _id: contactId,
+    userId,
+  });
+  return contact;
 };
