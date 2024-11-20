@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import Contact from '../models/contact.js';
+import Contact from '../db/models/contacts.js';
 
 export const loadInitialContacts = async () => {
   try {

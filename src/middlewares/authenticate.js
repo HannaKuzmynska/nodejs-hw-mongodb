@@ -1,33 +1,39 @@
 import createHttpError from 'http-errors';
-import { Session } from '../models/session.js';
+import { UserCollection } from '../db/models/user.js';
+import { SessionCollection } from '../db/models/session.js';
 
 export const authenticate = async (req, res, next) => {
-  try {
-    // Перевіряємо наявність куків
-    const sessionId = req.cookies.sessionId;
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!sessionId || !refreshToken) {
-      return next(createHttpError(401, 'Authorization required'));
-    }
-
-    // Знаходимо сесію за sessionId
-    const session = await Session.findOne({ _id: sessionId, refreshToken });
-
-    if (!session) {
-      return next(createHttpError(401, 'Session not found or expired'));
-    }
-
-    // Перевіряємо, чи не протермінований accessToken
-    const isAccessTokenExpired = new Date() > session.accessTokenValidUntil;
-
-    if (isAccessTokenExpired) {
-      return next(createHttpError(401, 'Access token expired'));
-    }
-
-    req.user = session.userId;
-    next();
-  } catch (error) {
-    next(createHttpError(500, 'Server error during authentication'));
+  const authHeader = req.get('Authorization');
+  if (!authHeader) {
+    next(createHttpError(401, 'Please provide Authorization header'));
+    return;
   }
+
+  const bearer = authHeader.split(' ')[0];
+  const token = authHeader.split(' ')[1];
+
+  if (bearer !== 'Bearer' || !token) {
+    next(createHttpError(401, 'Auth header should be of type Bearer'));
+    return;
+  }
+  const session = await SessionCollection.findOne({ accessToken: token });
+
+  if (!session) {
+    next(createHttpError(401, 'Session not found'));
+    return;
+  }
+
+  const isAccessTokenExpired =
+    new Date() > new Date(session.accessTokenValidUntil);
+
+  if (isAccessTokenExpired) {
+    next(createHttpError(401, 'Access token expired'));
+  }
+  const user = await UserCollection.findOne(session.userId);
+  if (!user) {
+    next(createHttpError(401));
+    return;
+  }
+  req.user = user;
+  next();
 };
